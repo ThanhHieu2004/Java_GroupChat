@@ -1,14 +1,17 @@
 package com.example.demo.models;
 
 public class ChatMessage {
-    private String sender;
+    private User user;
     private String content;
-	public String getSender() {
-		return sender;
-	}
-	public void setSender(String sender) {
-		this.sender = sender;
-	}
+
+    public void setUser(User user) {
+    	this.user = user;
+    }
+    
+    public User getUser() {
+    	return this.user;
+    }
+
 	public String getContent() {
 		return content;
 	}

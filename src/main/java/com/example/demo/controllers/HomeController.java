@@ -15,7 +15,7 @@ import com.example.demo.models.User;
 public class HomeController {
 	List<User> activeUsers = new ArrayList<>();
 	
-    @GetMapping("/login")
+    @GetMapping({"/", "/login"})
     public String loginPage() {
         return "login";
     }
