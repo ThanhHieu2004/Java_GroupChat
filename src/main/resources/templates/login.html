@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Login</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
+	rel="stylesheet"
+	integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7"
+	crossorigin="anonymous">
+
+<link href="./css/signin.css" rel="stylesheet">
+<style>
+@font-face {
+	font-family: FigtreeVF;
+	src:
+		url(chrome-extension://majdfhpaihoncoakbjgbdhglocklcgno/fonts/FigtreeVF.woff2)
+		format("woff2 supports variations"),
+		url(chrome-extension://majdfhpaihoncoakbjgbdhglocklcgno/fonts/FigtreeVF.woff2)
+		format("woff2-variations");
+	font-weight: 100 1000;
+	font-display: swap
+}
+</style>
+</head>
+<body class="text-center">
+	<form class="form-signin" action="/chat" method="POST">
+		<img class="mb-4"
+			src="https://cdn-icons-png.flaticon.com/512/5677/5677749.png" alt=""
+			width="72" height="72">
+		<h1 class="h3 mb-3 font-weight-normal">Please tell me your name</h1>
+		<label for="inputEmail" class="sr-only"></label> <input type="text"
+			name="username" id="inputName" class="form-control"
+			placeholder="Your name" required autofocus>
+		<!-- <label
+			for="inputPassword" class="sr-only"></label>  <input
+			type="password" id="inputPassword" class="form-control"
+			placeholder="Password" required=""> -->
+		<div class="checkbox mb-3">
+			<label> <input type="checkbox" value="remember-me">
+				Remember me
+			</label>
+		</div>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Let's
+			talk!</button>
+		<p class="mt-5 mb-3 text-muted">© 2017-2019</p>
+	</form>
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+		crossorigin="anonymous"></script>
+</body>
+</html>
