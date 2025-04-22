@@ -19,6 +19,7 @@ public class GroupController {
         if (!groups.contains(groupName)) {
             groups.add(groupName);
         }
+        System.out.println("Group created: " + groupName);
         return groupName;
     }
 }

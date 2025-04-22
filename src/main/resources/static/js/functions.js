@@ -15,27 +15,27 @@ function connect() {
 
 	stompClient.connect({}, function(frame) {
 		console.log('Connected: ' + frame);
-		/* Load history */
-		const sessionId = stompClient.ws._transport.url.split('/').slice(-2, -1)[0]; // Extract session ID from SockJS URL
-		stompClient.subscribe(`/queue/history-${sessionId}`, function(message) {
-			const msg = JSON.parse(message.body);
-			showMessage(msg);
-		});
 
 		/* Listen to messages being sent to /topic/public */
 		// Subscribe to chat messages
+		console.log("Trying to subscribe to /topic/public...");
 		stompClient.subscribe('/topic/public', function(message) {
 			const msg = JSON.parse(message.body);
 			showMessage(msg);
 		});
 
+		console.log("Trying to subscribe to /topic/groups...");
 		// Subscribe to group creation
-		/*stompClient.subscribe('/topic/groups', function(message) {
+		stompClient.subscribe('/topic/groups', function(message) {
+			console.log("✅ Received new group: ", message.body);
 			const groupName = message.body;
 			addGroupToSidebar(groupName);
-		});*/
+		});
 	});
 }
+
+let currentGroup = "public"; // default group
+let messageSubscription = null;
 
 sendMessageFn = function() {
 	const content = document.getElementById("messageInput").value;
@@ -73,14 +73,6 @@ window.showMessage = function(msg) {
 	const chatBox = document.getElementById("chatBox");
 	const messageElement = document.createElement("div");
 
-	if (msg.type === "JOIN") {
-		messageElement.classList.add("text-center", "text-muted", "mb-2");
-		messageElement.textContent = msg.content;
-		chatBox.appendChild(messageElement);
-		chatBox.scrollTop = chatBox.scrollHeight;
-		return;
-	}
-
 	const isCurrentUser = msg.user.username === username;
 	/*console.log(msg.user.username);*/
 	const displayName = isCurrentUser ? "You" : msg.user.username;
@@ -104,20 +96,10 @@ window.showMessage = function(msg) {
 
 
 // **** CREATE A NEW GROUP FUNCTION **** //
-let currentGroup = "public"; // default group
-let messageSubscription = null;
 function subscribeToGroup(groupName) {
-	console.log("[subscribeToGroup] Trying to subscribe to group:", groupName);
-
-	// Unsubscribe from previous group
-	if (messageSubscription) {
-		console.log("[subscribeToGroup] Unsubscribing from previous group");
-		messageSubscription.unsubscribe();
-	}
 
 	// Subscribe to new group topic
 	messageSubscription = stompClient.subscribe(`/topic/groups/${groupName}`, function(message) {
-		console.log("✅ [subscribeToGroup] Received message on group topic:", message.body);
 		try {
 			const msg = JSON.parse(message.body);
 			showMessage(msg);
@@ -125,15 +107,6 @@ function subscribeToGroup(groupName) {
 			console.error("Failed to parse message", err);
 		}
 	});
-
-	console.log("📨 [subscribeToGroup] Sending joinGroup for", groupName);
-
-	stompClient.send(`/app/chat.joinGroup.${groupName}`, {}, JSON.stringify({
-		user: {
-			username: username,
-			avatar: avatar
-		}
-	}));
 }
 
 window.createNewGroup = function() {
@@ -144,14 +117,21 @@ window.createNewGroup = function() {
 		return;
 	}
 
+	// Wait for a bit before connection is established.
+	if (!stompClient || !stompClient.connected) {
+		alert("WebSocket connection not ready yet. Please wait...");
+		return;
+	}
+
 	// Send group to backend
 	stompClient.send("/app/group.create", {}, groupName);
+
+
 }
 
 function addGroupToSidebar(groupName) {
-	const groupList = document.querySelector(".col-lg-5 .list-group");
-	if (!groupList) return;
-
+	const groupList = document.querySelector(".list-group");
+	console.log(groupList);
 	const groupItem = document.createElement("a");
 	groupItem.href = "#";
 	groupItem.className = "list-group-item list-group-item-action border-0";
@@ -167,26 +147,26 @@ function addGroupToSidebar(groupName) {
 			</div>
 		</div>
 	`;
+	/*	console.log("Added a new group to left side bar!");*/
 
 	groupItem.addEventListener("click", function() {
-		if (currentGroup !== groupName) {
-			currentGroup = groupName;
-
-			document.getElementById("groupName").textContent = groupName;
-
-			document.querySelectorAll(".list-group-item").forEach(el => el.classList.remove("active"));
-			groupItem.classList.add("active");
-
-			subscribeToGroup(groupName);
-			clearChatBox();
-
-			// Load history
-			stompClient.send(`/app/chat.loadHistory.${groupName}`, {});
-		}
+		switchGroup(groupName);
 	});
-	/*console.log(`Added ${groupName}!`); */
+
 	groupList.appendChild(groupItem);
 
+}
+
+function switchGroup(groupName) {
+	if (messageSubscription) {
+		messageSubscription.unsubscribe();
+	}
+
+	clearChatBox();
+	currentGroup = groupName;
+
+	subscribeToGroup(groupName);
+	console.log(`✅ Switched to group: ${groupName}`);
 }
 
 function clearChatBox() {
@@ -196,5 +176,3 @@ function clearChatBox() {
 
 
 document.addEventListener("DOMContentLoaded", connect);
-
-

@@ -28,17 +28,6 @@ public class ChatController {
 		return message;
 	}
 
-	@MessageMapping("/chat.loadHistory.{group}")
-	public void loadGroupHistory(@DestinationVariable String group, SimpMessageHeaderAccessor headerAccessor) {
-		List<ChatMessage> history = groupMessageMap.getOrDefault(group, new ArrayList<>());
-		String sessionId = headerAccessor.getSessionId();
-		String simpSessionId = headerAccessor.getSessionId();
-		for (ChatMessage msg : history) {
-			// Manually send each message back to client (since we can't @SendTo here)
-			messagingTemplate.convertAndSend("/queue/history-" + simpSessionId, msg);
-			System.out.println("Sending history for group: " + group + " to session: " + sessionId);
-		}
-	}
 
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
