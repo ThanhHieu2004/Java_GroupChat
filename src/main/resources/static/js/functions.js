@@ -98,6 +98,9 @@ window.showMessage = function(msg) {
 // **** CREATE A NEW GROUP FUNCTION **** //
 function subscribeToGroup(groupName) {
 
+	let groupchatName = document.getElementsByClassName("groupChatName")[0];
+	groupchatName.innerHTML = groupName;
+
 	// Subscribe to new group topic
 	messageSubscription = stompClient.subscribe(`/topic/groups/${groupName}`, function(message) {
 		try {
@@ -152,18 +155,26 @@ function addGroupToSidebar(groupName) {
 	groupItem.addEventListener("click", function() {
 		switchGroup(groupName);
 	});
+	// Switch group right after creating it!
+	switchGroup(groupName);
 
 	groupList.appendChild(groupItem);
 
 }
 
 function switchGroup(groupName) {
+	const groupChat = document.querySelector(".py-2.px-4.border-bottom.d-none.d-lg-block");
+	// If the groupChat is hidden!
+	if (groupChat.checkVisibility) {
+		groupChat.style.visibility = "visible";
+	}
 	if (messageSubscription) {
 		messageSubscription.unsubscribe();
 	}
 
 	clearChatBox();
 	currentGroup = groupName;
+	groupChat.getElementsByClassName("groupChatName")[0].innerText = groupName;
 
 	subscribeToGroup(groupName);
 	console.log(`✅ Switched to group: ${groupName}`);
