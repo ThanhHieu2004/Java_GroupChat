@@ -27,7 +27,7 @@ function connect() {
 		console.log("Trying to subscribe to /topic/groups...");
 		// Subscribe to group creation
 		stompClient.subscribe('/topic/groups', function(message) {
-			console.log("✅ Received new group: ", message.body);
+			console.log("Received new group: ", message.body);
 			const groupName = message.body;
 			addGroupToSidebar(groupName);
 		});
@@ -41,10 +41,8 @@ sendMessageFn = function() {
 	const content = document.getElementById("messageInput").value;
 	stompClient.send(`/app/chat.sendMessage.${currentGroup}`, {}, JSON.stringify({
 		content: content,
-		user: {
-			username: username,
-			avatar: avatar
-		}
+		senderUsername: username,
+		senderAvatar: avatar,
 	}));
 	document.getElementById("messageInput").value = "";
 	sendBtn.disabled = true;
@@ -73,15 +71,15 @@ window.showMessage = function(msg) {
 	const chatBox = document.getElementById("chatBox");
 	const messageElement = document.createElement("div");
 
-	const isCurrentUser = msg.user.username === username;
-	/*console.log(msg.user.username);*/
-	const displayName = isCurrentUser ? "You" : msg.user.username;
+	const isCurrentUser = msg.senderUsername === username;
+	/*console.log(msg.senderUsername);*/
+	const displayName = isCurrentUser ? "You" : msg.senderUsername;
 	const alignmentClass = isCurrentUser ? "chat-message-right" : "chat-message-left";
 
 	messageElement.classList.add(alignmentClass, "pb-4"); // or 'chat-message-left' depending on user
 	messageElement.innerHTML = `
             <div>
-                <img src="${msg.user.avatar}"
+                <img src="${msg.senderAvatar}"
                     class="rounded-circle mr-1" width="40" height="40">
                 <div class="text-muted small text-nowrap mt-2">${getCurrentTime()}</div>
             </div>
@@ -133,51 +131,36 @@ window.createNewGroup = function() {
 }
 
 function addGroupToSidebar(groupName) {
-	const groupList = document.querySelector(".list-group");
-	console.log(groupList);
-	const groupItem = document.createElement("a");
-	groupItem.href = "#";
-	groupItem.className = "list-group-item list-group-item-action border-0";
-	groupItem.innerHTML = `
-		<div class="d-flex align-items-start">
-			<img src="https://cdn-icons-png.flaticon.com/512/5677/5677749.png"
-				class="rounded-circle mr-1" alt="${groupName}" width="40" height="40">
-			<div class="flex-grow-1 ml-3">
-				${groupName}
-				<div class="small text-success">
-					<span class="fas fa-circle chat-online"></span> Active
+	fetch(`/api/groups/${groupName}`)
+		.then(response => response.json())
+		.then(group => {
+			const groupList = document.querySelector(".list-group");
+			const groupItem = document.createElement("a");
+			groupItem.href = "#";
+			groupItem.className = "list-group-item list-group-item-action border-0";
+
+			groupItem.innerHTML = `
+				<div class="d-flex align-items-start">
+					<img src="${group.groupAvatar}" class="rounded-circle mr-1" alt="${group.groupName}" width="40" height="40">
+					<div class="flex-grow-1 ml-3">
+						${group.groupName}
+						<div class="small text-success">
+							<span class="fas fa-circle chat-online"></span> Active
+						</div>
+					</div>
 				</div>
-			</div>
-		</div>
-	`;
-	/*	console.log("Added a new group to left side bar!");*/
+			`;
 
-	groupItem.addEventListener("click", function() {
-		switchGroup(groupName);
-	});
-	// Switch group right after creating it!
-	switchGroup(groupName);
+			groupItem.addEventListener("click", function() {
+				switchGroup(groupName);
+			});
+			// Switch group right after creating it!
+			switchGroup(groupName);
 
-	groupList.appendChild(groupItem);
+			groupList.appendChild(groupItem);
+		})
+		.catch(error => console.error("Failed to load group avatar:", error));
 
-}
-
-function switchGroup(groupName) {
-	const groupChat = document.querySelector(".py-2.px-4.border-bottom.d-none.d-lg-block");
-	// If the groupChat is hidden!
-	if (groupChat.checkVisibility) {
-		groupChat.style.visibility = "visible";
-	}
-	if (messageSubscription) {
-		messageSubscription.unsubscribe();
-	}
-
-	clearChatBox();
-	currentGroup = groupName;
-	groupChat.getElementsByClassName("groupChatName")[0].innerText = groupName;
-
-	subscribeToGroup(groupName);
-	console.log(`✅ Switched to group: ${groupName}`);
 }
 
 function clearChatBox() {
@@ -185,5 +168,51 @@ function clearChatBox() {
 	chatBox.innerHTML = '';
 }
 
+function switchGroup(groupName) {
+	const groupChat = document.querySelector(".py-2.px-4.border-bottom.d-none.d-lg-block");
+	if (groupChat) groupChat.style.visibility = "visible";
 
-document.addEventListener("DOMContentLoaded", connect);
+	if (messageSubscription) messageSubscription.unsubscribe();
+
+	clearChatBox();
+	currentGroup = groupName;
+
+	fetch(`/api/groups/${groupName}`)
+		.then(response => response.json())
+		.then(group => {
+			const classAvatar = document.getElementsByClassName("classImage")[0]
+			if (classAvatar) {
+				classAvatar.src = group.groupAvatar || "https://cdn-icons-png.flaticon.com/512/5677/5677749.png";
+			}
+		})
+
+	fetch(`/api/messages/${groupName}`)
+		.then(response => response.json())
+		.then(messages => {
+			messages.forEach(msg => {
+				showMessage(msg);
+			});
+		})
+		.catch(error => console.error("Failed to load messages:", error));
+
+	// Update the group name and subscribe to the new group
+	groupChat.getElementsByClassName("groupChatName")[0].innerText = groupName;
+	subscribeToGroup(groupName);
+
+	console.log(`Switched to group: ${groupName}`);
+}
+
+
+
+document.addEventListener("DOMContentLoaded", function() {
+	connect();
+	// Fetch group from backend
+	fetch("/api/groups")
+		.then(response => response.json())
+		.then(data => {
+			data.forEach(group => {
+				addGroupToSidebar(group.groupName);
+			});
+		})
+		.catch(error => console.error("Failed to load groups:", error));
+});

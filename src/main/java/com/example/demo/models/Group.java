@@ -2,8 +2,13 @@ package com.example.demo.models;
 
 import java.util.List;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "groups")
 public class Group {
-	private int groupID;
+	@Id
+	private String id;
 	private String groupName;
 	private List<User> userList;
 	private String groupAvatar;
@@ -12,9 +17,8 @@ public class Group {
 
 	}
 
-	public Group(int groupID, String groupName, List<User> userList, String groupAvatar) {
+	public Group(String groupName, List<User> userList, String groupAvatar) {
 		super();
-		this.groupID = groupID;
 		this.groupName = groupName;
 		this.userList = userList;
 		this.groupAvatar = groupAvatar;
@@ -28,19 +32,10 @@ public class Group {
 		this.groupAvatar = groupAvatar;
 	}
 
-	public Group(int groupID, String groupName, List<User> userList) {
+	public Group(String groupName, List<User> userList) {
 		super();
-		this.groupID = groupID;
 		this.groupName = groupName;
 		this.userList = userList;
-	}
-
-	public int getGroupID() {
-		return groupID;
-	}
-
-	public void setGroupID(int groupID) {
-		this.groupID = groupID;
 	}
 
 	public String getGroupName() {
@@ -59,9 +54,8 @@ public class Group {
 		this.userList = userList;
 	}
 
-	public Group(int groupID, String groupName) {
+	public Group(String groupName) {
 		super();
-		this.groupID = groupID;
 		this.groupName = groupName;
 	}
 
