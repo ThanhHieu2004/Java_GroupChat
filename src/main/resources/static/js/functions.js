@@ -81,7 +81,7 @@ window.showMessage = function(msg) {
             <div>
                 <img src="${msg.senderAvatar}"
                     class="rounded-circle mr-1" width="40" height="40">
-                <div class="text-muted small text-nowrap mt-2">${getCurrentTime()}</div>
+                <div class="text-muted small text-nowrap mt-2">${msg.timestamp}</div>
             </div>
             <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
                 <div class="font-weight-bold mb-1">${displayName}</div>
@@ -155,7 +155,7 @@ function addGroupToSidebar(groupName) {
 				switchGroup(groupName);
 			});
 			// Switch group right after creating it!
-			switchGroup(groupName);
+			// switchGroup(groupName);
 
 			groupList.appendChild(groupItem);
 		})
@@ -168,6 +168,9 @@ function clearChatBox() {
 	chatBox.innerHTML = '';
 }
 
+let videoActive = false;
+let localStream = null;
+
 function switchGroup(groupName) {
 	const groupChat = document.querySelector(".py-2.px-4.border-bottom.d-none.d-lg-block");
 	if (groupChat) groupChat.style.visibility = "visible";
@@ -176,6 +179,16 @@ function switchGroup(groupName) {
 
 	clearChatBox();
 	currentGroup = groupName;
+
+	if (groupName === "Video Call") {
+		document.getElementById("videoContainer").style.display = "block";
+		document.getElementById("chatBox").style.display = "none";
+		initVideoCall();
+	} else {
+		document.getElementById("videoContainer").style.display = "none";
+		document.getElementById("chatBox").style.display = "block";
+		stopVideoCall();
+	}
 
 	fetch(`/api/groups/${groupName}`)
 		.then(response => response.json())
@@ -202,7 +215,39 @@ function switchGroup(groupName) {
 	console.log(`Switched to group: ${groupName}`);
 }
 
+async function initVideoCall() {
+	const video = document.getElementById("videoPlayer");
+	video.style.display = "block";
 
+	try {
+		localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+		video.srcObject = localStream;
+	} catch (err) {
+		console.error("Failed to access camera:", err);
+	}
+}
+
+function stopVideoCall() {
+	if (localStream) {
+		localStream.getTracks().forEach(track => track.stop()); // stop camera + mic
+		localStream = null;
+	}
+	const video = document.getElementById("videoPlayer");
+	if (video) {
+		video.srcObject = null; // disconnect the stream from the video tag
+	}
+}
+
+
+function callVideo() {
+	// Show the video element
+	document.getElementById("videoContainer").style.display = "block";
+	videoActive = true;
+
+	// Switch to "Video Call" group
+	switchGroup("Video Call");
+	initVideoCall();
+}
 
 document.addEventListener("DOMContentLoaded", function() {
 	connect();
